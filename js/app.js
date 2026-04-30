@@ -85,61 +85,9 @@ function initApp() {
   let recognition = null;
 
   function initSpeech() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
+    if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) {
       voiceBtn.style.display = 'none';
-      return;
     }
-    recognition = new SpeechRecognition();
-    recognition.lang = 'zh-CN';
-    recognition.interimResults = true;
-    recognition.continuous = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.onresult = (event) => {
-      let final = '';
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const r = event.results[i];
-        if (r.isFinal) {
-          final += r[0].transcript;
-        } else {
-          interim += r[0].transcript;
-        }
-      }
-      const text = final || interim;
-      if (text) {
-        input.value = text;
-        input.focus();
-      }
-      if (final) {
-        stopListening();
-        setTimeout(() => handleInput(), 300);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      stopListening();
-      if (event.error === 'not-allowed') {
-        showToast('麦克风权限未开启，请在系统设置中允许');
-      } else if (event.error === 'no-speech') {
-        showToast('没有听到声音，请再试一次');
-      } else if (event.error === 'audio-capture') {
-        showToast('未检测到麦克风');
-      } else if (event.error === 'network') {
-        showToast('语音识别需要网络连接');
-      } else {
-        showToast('语音识别出错: ' + event.error);
-      }
-      // 错误后重建 recognition 对象
-      initSpeech();
-    };
-
-    recognition.onend = () => {
-      if (voiceBtn.classList.contains('listening')) {
-        stopListening();
-      }
-    };
   }
 
   function startListening() {
@@ -154,10 +102,13 @@ function initApp() {
       try { recognition.abort(); } catch(e) {}
       recognition = null;
     }
+    const listenStartTime = Date.now();
+    let hasResult = false;
+
     recognition = new SpeechRecognition();
     recognition.lang = 'zh-CN';
     recognition.interimResults = true;
-    recognition.continuous = false;
+    recognition.continuous = true;  // 不自动停止，等我们说停
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event) => {
@@ -166,6 +117,7 @@ function initApp() {
         if (event.results[i].isFinal) final += event.results[i][0].transcript;
       }
       if (final) {
+        hasResult = true;
         input.value = final;
         stopListening();
         setTimeout(() => handleInput(), 300);
@@ -183,7 +135,21 @@ function initApp() {
     };
 
     recognition.onend = () => {
-      if (voiceBtn.classList.contains('listening')) stopListening();
+      // 启动保护：800ms 内不自动停止
+      const elapsed = Date.now() - listenStartTime;
+      if (elapsed < 800) return;
+      if (voiceBtn.classList.contains('listening')) {
+        // 如果还没收到最终结果，等一等
+        if (!hasResult) {
+          setTimeout(() => {
+            if (voiceBtn.classList.contains('listening') && !hasResult) {
+              stopListening();
+            }
+          }, 1000);
+        } else {
+          stopListening();
+        }
+      }
     };
 
     voiceBtn.classList.add('listening');
