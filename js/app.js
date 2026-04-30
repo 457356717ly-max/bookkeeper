@@ -323,22 +323,27 @@ function initApp() {
   const iconGrid = document.getElementById('icon-picker-grid');
   let selectedIcon = '📌';
 
-  // 预设图标库
-  const PRESET_ICONS = [
-    '🍜','🍕','🍔','🌮','🍱','🥗','☕','🍺','🍩','🍰','🍉','🍎',
-    '🚗','🚌','🚇','✈️','🚲','🛵','🚕','⛽','🚄','🚢',
-    '🛒','👗','👟','💄','📱','💻','🎁','👜','⌚','💍',
-    '🎮','🎬','🎵','🎸','⚽','🏀','🎤','🎯','🎲','🎪',
-    '🏠','💡','💧','🔧','📺','🛋️','🛁','🔑','🪴',
-    '💊','🏥','💉','🩺','🩹','🦷','👓','🌡️',
-    '📚','✏️','🎓','📝','💼','📐','🔬','🎨',
-    '💰','💵','💳','💎','🏦','📊','💸',
-    '🐱','🐶','🌸','⭐','❤️','🔥','🎉','📌'
+  // 预设图标库（分类）
+  const ICON_GROUPS = [
+    { label: '🍜 餐饮', icons: ['🍜','🍕','🍔','🌮','🍱','🥗','☕','🍺','🍩','🍰','🍉','🍎','🥘','🧋','🍿','🍪'] },
+    { label: '🚗 交通', icons: ['🚗','🚌','🚇','✈️','🚲','🛵','🚕','⛽','🚄','🚢','🚶','🛴'] },
+    { label: '🛒 购物', icons: ['🛒','👗','👟','💄','📱','💻','🎁','👜','⌚','💍','🪞','🧴'] },
+    { label: '🎮 娱乐', icons: ['🎮','🎬','🎵','🎸','⚽','🏀','🎤','🎯','🎲','🎪','🎳','🏸'] },
+    { label: '🏠 住房', icons: ['🏠','💡','💧','🔧','📺','🛋️','🛁','🔑','🪴','🧹','🪣','🛠️'] },
+    { label: '💊 医疗', icons: ['💊','🏥','💉','🩺','🩹','🦷','👓','🌡️','🧬','🫁'] },
+    { label: '📚 教育', icons: ['📚','✏️','🎓','📝','💼','📐','🔬','🎨','🖊️','📖'] },
+    { label: '💰 财务', icons: ['💰','💵','💳','💎','🏦','📊','💸','🧧','🎫','📈'] },
+    { label: '⭐ 其他', icons: ['🐱','🐶','🌸','⭐','❤️','🔥','🎉','📌','🎂','💝','👶','🌍'] }
   ];
 
   function renderIconGrid() {
-    iconGrid.innerHTML = PRESET_ICONS.map(icon =>
-      `<div class="icon-option" data-icon="${icon}">${icon}</div>`
+    iconGrid.innerHTML = ICON_GROUPS.map(group =>
+      `<div class="icon-group-label">${group.label}</div>` +
+      `<div class="icon-group-row">` +
+        group.icons.map(icon =>
+          `<div class="icon-option" data-icon="${icon}">${icon}</div>`
+        ).join('') +
+      `</div>`
     ).join('');
     iconGrid.querySelectorAll('.icon-option').forEach(el => {
       el.addEventListener('click', () => {

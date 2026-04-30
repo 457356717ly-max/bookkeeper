@@ -558,11 +558,29 @@ input, button, select, textarea, [role="button"], .nav-btn, .quick-cat, .cat-del
   touch-action: manipulation;
 }
 
-.icon-picker-grid {
+/* 图标分组 */
+.icon-group-label {
+  font-size: 13px;
+  color: var(--text-dim);
+  padding: 14px 0 6px 4px;
+  grid-column: 1 / -1;
+  font-weight: 500;
+}
+
+.icon-group-label:first-child {
+  padding-top: 0;
+}
+
+.icon-group-row {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
+}
+
+.icon-picker-grid {
+  display: flex;
+  flex-direction: column;
 }
 
 .icon-option {
