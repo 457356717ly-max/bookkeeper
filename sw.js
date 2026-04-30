@@ -1,14 +1,14 @@
 const CACHE = 'bookkeeper-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/manifest.json',
-  '/js/icons.js',
-  '/js/db.js',
-  '/js/parser.js',
-  '/js/stats.js',
-  '/js/app.js'
+  '/bookkeeper/',
+  '/bookkeeper/index.html',
+  '/bookkeeper/css/style.css',
+  '/bookkeeper/manifest.json',
+  '/bookkeeper/js/icons.js',
+  '/bookkeeper/js/db.js',
+  '/bookkeeper/js/parser.js',
+  '/bookkeeper/js/stats.js',
+  '/bookkeeper/js/app.js'
 ];
 
 self.addEventListener('install', e => {
