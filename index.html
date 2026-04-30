@@ -43,6 +43,10 @@
     </div>
   </div>
   <div id="quick-record" class="quick-record">
+    <div class="quick-toggle">
+      <button id="quick-type-expense" class="toggle-btn active">支出</button>
+      <button id="quick-type-income" class="toggle-btn">收入</button>
+    </div>
     <div class="quick-amount">
       <input type="text" id="quick-amount" placeholder="金额" inputmode="decimal">
       <span>元</span>
@@ -88,6 +92,18 @@
     </div>
   </div>
 
+  <!-- 预算进度 -->
+  <div id="budget-bar-wrap" class="chart-container hidden">
+    <div class="chart-label">月度预算</div>
+    <div class="budget-info">
+      <span id="budget-spent"></span>
+      <span id="budget-remain"></span>
+    </div>
+    <div class="budget-bar-bg">
+      <div id="budget-bar" class="budget-bar-fill"></div>
+    </div>
+  </div>
+
   <!-- 分类明细 -->
   <div class="chart-container">
     <div class="chart-label">分类明细</div>
@@ -116,6 +132,18 @@
       <input type="text" id="new-cat-name" placeholder="新分类名称">
       <button id="new-cat-icon-btn" class="icon-pick-btn" title="选择图标">📌</button>
       <button id="add-cat-btn" class="btn-primary btn-sm">添加</button>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="section-title">月度预算</div>
+    <div class="budget-setting">
+      <span>每月支出上限</span>
+      <div class="budget-input-wrap">
+        <span>¥</span>
+        <input type="number" id="budget-input" placeholder="如 5000" inputmode="decimal" step="100" min="0">
+      </div>
+      <button id="budget-save-btn" class="btn-primary btn-sm">保存</button>
     </div>
   </div>
 
@@ -159,6 +187,46 @@
   </button>
 </nav>
 
+<!-- 编辑弹窗 -->
+<div id="edit-modal" class="icon-picker-overlay hidden">
+  <div class="edit-panel">
+    <div class="icon-picker-header">
+      <span>编辑记录</span>
+      <button id="edit-close" class="btn-close">✕</button>
+    </div>
+    <div class="edit-body">
+      <div class="edit-row">
+        <label>类型</label>
+        <div class="quick-toggle" style="margin:0">
+          <button id="edit-type-expense" class="toggle-btn active">支出</button>
+          <button id="edit-type-income" class="toggle-btn">收入</button>
+        </div>
+      </div>
+      <div class="edit-row">
+        <label>金额</label>
+        <input type="number" id="edit-amount" placeholder="金额" inputmode="decimal" step="0.01">
+      </div>
+      <div class="edit-row">
+        <label>分类</label>
+        <select id="edit-category" class="sel" style="width:100%"></select>
+      </div>
+      <div class="edit-row">
+        <label>备注</label>
+        <input type="text" id="edit-note" placeholder="备注（可选）">
+      </div>
+      <div class="edit-row">
+        <label>日期</label>
+        <input type="date" id="edit-date">
+      </div>
+    </div>
+    <div class="edit-actions">
+      <button id="edit-delete" class="btn-delete">删除</button>
+      <button id="edit-save" class="btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 页面内容结束 -->
 <script src="js/icons.js"></script>
 <script src="js/db.js"></script>
 <script src="js/parser.js"></script>

@@ -211,6 +211,36 @@ input, button, select, textarea, [role="button"], .nav-btn, .quick-cat, .cat-del
 }
 
 /* 快速记账 */
+/* 快速记账 */
+/* 收支切换 */
+.quick-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 10px;
+  background: var(--bg-input);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  touch-action: manipulation;
+}
+
+.toggle-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
 .quick-record {
   background: var(--bg-card);
   border-radius: var(--radius);
@@ -753,3 +783,145 @@ input, button, select, textarea, [role="button"], .nav-btn, .quick-cat, .cat-del
   z-index: 100;
   animation: slideIn 0.3s ease-out;
 }
+
+/* 编辑弹窗 */
+.edit-panel {
+  background: var(--bg-card);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 20px;
+  padding-bottom: calc(20px + var(--safe-bottom));
+}
+
+.edit-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edit-row label {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.edit-row input,
+.edit-row select {
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 2px solid var(--bg-input);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.edit-row input:focus,
+.edit-row select:focus {
+  border-color: var(--primary);
+}
+
+.edit-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-actions .btn-primary {
+  flex: 1;
+}
+
+.btn-delete {
+  padding: 12px 20px;
+  min-height: 44px;
+  background: rgba(231, 76, 60, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: var(--radius);
+  font-size: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.btn-delete:active {
+  background: rgba(231, 76, 60, 0.3);
+}
+
+/* 预算设置 */
+.budget-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.budget-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border-radius: 10px;
+  flex: 1;
+}
+
+.budget-input-wrap span {
+  color: var(--text-dim);
+  font-size: 16px;
+}
+
+.budget-input-wrap input {
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+  width: 100%;
+  outline: none;
+}
+
+/* 预算进度条 */
+.budget-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+#budget-spent {
+  color: var(--text-dim);
+}
+
+#budget-remain {
+  font-weight: 600;
+}
+
+#budget-remain.safe { color: var(--green); }
+#budget-remain.warn { color: var(--yellow); }
+#budget-remain.danger { color: var(--danger); }
+
+.budget-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.budget-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease, background 0.3s ease;
+}
+
+.budget-bar-fill.safe { background: var(--green); }
+.budget-bar-fill.warn { background: var(--yellow); }
+.budget-bar-fill.danger { background: var(--danger); }

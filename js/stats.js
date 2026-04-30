@@ -253,6 +253,9 @@ async function refreshStats() {
 
   const trend = await calcDailyTrend(year, month);
   renderLineChart(trend);
+
+  // 更新预算进度条
+  if (window.renderBudget) await window.renderBudget(year, month);
 }
 
 // 初始化年份选择器

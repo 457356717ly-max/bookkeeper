@@ -205,9 +205,10 @@ function initApp() {
 
   // === 快速记账 ===
   let quickCat = null;
+  let quickType = 'expense';
 
   async function loadQuickCats() {
-    const cats = await getCategories('expense');
+    const cats = await getCategories(quickType);
     const container = document.getElementById('quick-cats');
     container.innerHTML = cats.map(c =>
       `<span class="quick-cat" data-cat="${c.name}">${c.icon} ${c.name}</span>`
@@ -222,6 +223,22 @@ function initApp() {
     });
   }
 
+  // 收支切换
+  document.getElementById('quick-type-expense').addEventListener('click', () => {
+    quickType = 'expense';
+    document.getElementById('quick-type-expense').classList.add('active');
+    document.getElementById('quick-type-income').classList.remove('active');
+    quickCat = null;
+    loadQuickCats();
+  });
+  document.getElementById('quick-type-income').addEventListener('click', () => {
+    quickType = 'income';
+    document.getElementById('quick-type-income').classList.add('active');
+    document.getElementById('quick-type-expense').classList.remove('active');
+    quickCat = null;
+    loadQuickCats();
+  });
+
   document.getElementById('quick-record-btn').addEventListener('click', async () => {
     const amountStr = document.getElementById('quick-amount').value.trim();
     if (!amountStr) { showToast('请输入金额'); return; }
@@ -230,7 +247,7 @@ function initApp() {
     if (!quickCat) { showToast('请选一个分类'); return; }
 
     await addTransaction({
-      type: 'expense',
+      type: quickType,
       amount,
       category: quickCat,
       note: '',
@@ -282,11 +299,19 @@ function initApp() {
 
   function setupSwipeDelete() {
     document.querySelectorAll('.tx-item').forEach(item => {
+      // 点击 → 编辑
+      item.addEventListener('click', async () => {
+        const id = parseInt(item.dataset.id);
+        openEditModal(id);
+      });
+
+      // 左滑 → 删除
       let startX = 0;
-      item.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
+      item.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
       item.addEventListener('touchend', async e => {
         const diff = startX - e.changedTouches[0].clientX;
         if (diff > 80) {
+          e.preventDefault();
           const id = parseInt(item.dataset.id);
           if (confirm('删除这条记录？')) {
             await deleteTransaction(id);
@@ -297,6 +322,91 @@ function initApp() {
       });
     });
   }
+
+  // === 编辑弹窗 ===
+  const editModal = document.getElementById('edit-modal');
+  let editingTxId = null;
+
+  async function openEditModal(id) {
+    const tx = await db.transactions.get(id);
+    if (!tx) return;
+    editingTxId = id;
+
+    // 类型切换
+    if (tx.type === 'expense') {
+      document.getElementById('edit-type-expense').classList.add('active');
+      document.getElementById('edit-type-income').classList.remove('active');
+    } else {
+      document.getElementById('edit-type-income').classList.add('active');
+      document.getElementById('edit-type-expense').classList.remove('active');
+    }
+
+    document.getElementById('edit-amount').value = tx.amount;
+    document.getElementById('edit-note').value = tx.note || '';
+    document.getElementById('edit-date').value = tx.date;
+
+    // 加载对应类型的分类
+    await loadEditCategories(tx.type, tx.category);
+
+    editModal.classList.remove('hidden');
+  }
+
+  async function loadEditCategories(type, selected) {
+    const cats = await getCategories(type);
+    const sel = document.getElementById('edit-category');
+    sel.innerHTML = cats.map(c =>
+      `<option value="${c.name}" ${c.name === selected ? 'selected' : ''}>${c.icon} ${c.name}</option>`
+    ).join('');
+  }
+
+  // 编辑弹窗内类型切换
+  document.getElementById('edit-type-expense').addEventListener('click', async () => {
+    document.getElementById('edit-type-expense').classList.add('active');
+    document.getElementById('edit-type-income').classList.remove('active');
+    await loadEditCategories('expense');
+  });
+  document.getElementById('edit-type-income').addEventListener('click', async () => {
+    document.getElementById('edit-type-income').classList.add('active');
+    document.getElementById('edit-type-expense').classList.remove('active');
+    await loadEditCategories('income');
+  });
+
+  // 关闭
+  document.getElementById('edit-close').addEventListener('click', () => {
+    editModal.classList.add('hidden');
+    editingTxId = null;
+  });
+  editModal.addEventListener('click', e => {
+    if (e.target === editModal) { editModal.classList.add('hidden'); editingTxId = null; }
+  });
+
+  // 保存
+  document.getElementById('edit-save').addEventListener('click', async () => {
+    if (!editingTxId) return;
+    const type = document.getElementById('edit-type-expense').classList.contains('active') ? 'expense' : 'income';
+    const amount = parseFloat(document.getElementById('edit-amount').value);
+    if (isNaN(amount) || amount <= 0) { showToast('金额不对'); return; }
+    const category = document.getElementById('edit-category').value;
+    const note = document.getElementById('edit-note').value.trim();
+    const date = document.getElementById('edit-date').value;
+
+    await updateTransaction(editingTxId, { type, amount, category, note, date });
+    editModal.classList.add('hidden');
+    editingTxId = null;
+    await refreshRecordList();
+    showToast('已保存 ✓');
+  });
+
+  // 删除
+  document.getElementById('edit-delete').addEventListener('click', async () => {
+    if (!editingTxId) return;
+    if (!confirm('确定删除这条记录？')) return;
+    await deleteTransaction(editingTxId);
+    editModal.classList.add('hidden');
+    editingTxId = null;
+    await refreshRecordList();
+    showToast('已删除');
+  });
 
   // === 设置页 ===
   async function refreshSettings() {
@@ -418,6 +528,58 @@ function initApp() {
     await loadQuickCats();
     showToast('已添加');
   });
+
+  // === 预算 ===
+  const budgetInput = document.getElementById('budget-input');
+  // 加载已保存的预算
+  const savedBudget = localStorage.getItem('monthlyBudget');
+  if (savedBudget) budgetInput.value = savedBudget;
+
+  document.getElementById('budget-save-btn').addEventListener('click', () => {
+    const val = parseFloat(budgetInput.value);
+    if (isNaN(val) || val < 0) {
+      showToast('请输入有效金额');
+      return;
+    }
+    localStorage.setItem('monthlyBudget', val);
+    showToast('预算已保存 ✓');
+  });
+
+  // 渲染预算进度条（在 refreshStats 中调用）
+  window.renderBudget = async function(year, month) {
+    const budget = parseFloat(localStorage.getItem('monthlyBudget'));
+    const wrap = document.getElementById('budget-bar-wrap');
+    if (!budget || budget <= 0) {
+      wrap.classList.add('hidden');
+      return;
+    }
+    wrap.classList.remove('hidden');
+
+    let expenses;
+    if (month && month > 0) {
+      expenses = await getExpenses(year, month);
+    } else {
+      // 全年不显示预算进度
+      wrap.classList.add('hidden');
+      return;
+    }
+
+    const spent = expenses.reduce((sum, t) => sum + t.amount, 0);
+    const pct = Math.min(spent / budget * 100, 100);
+    const remain = budget - spent;
+
+    let cls = 'safe';
+    if (pct > 90) cls = 'danger';
+    else if (pct > 70) cls = 'warn';
+
+    document.getElementById('budget-spent').textContent = `已花 ¥${spent.toFixed(2)} / ¥${budget}`;
+    document.getElementById('budget-remain').textContent = remain > 0 ? `剩余 ¥${remain.toFixed(2)}` : `超支 ¥${Math.abs(remain).toFixed(2)}`;
+    document.getElementById('budget-remain').className = cls;
+
+    const bar = document.getElementById('budget-bar');
+    bar.style.width = pct + '%';
+    bar.className = 'budget-bar-fill ' + cls;
+  };
 
   // === 导出 CSV ===
   document.getElementById('export-csv').addEventListener('click', async () => {

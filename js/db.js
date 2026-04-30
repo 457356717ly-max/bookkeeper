@@ -43,6 +43,10 @@ async function deleteTransaction(id) {
   await db.transactions.delete(id);
 }
 
+async function updateTransaction(id, updates) {
+  await db.transactions.update(id, updates);
+}
+
 // 获取今日流水
 async function getTodayTransactions() {
   const today = todayStr();
