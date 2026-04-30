@@ -36,15 +36,18 @@ async function addTransaction(tx) {
     date: tx.date || todayStr(),
     createdAt: new Date()
   });
+  debounceBackup();
   return id;
 }
 
 async function deleteTransaction(id) {
   await db.transactions.delete(id);
+  debounceBackup();
 }
 
 async function updateTransaction(id, updates) {
   await db.transactions.update(id, updates);
+  debounceBackup();
 }
 
 // 获取今日流水
@@ -103,11 +106,14 @@ async function getCategories(type) {
 async function addCategory(name, icon, type) {
   const exists = await db.categories.where({ name, type }).first();
   if (exists) return null;
-  return db.categories.add({ name, icon: icon || '📌', type });
+  const id = await db.categories.add({ name, icon: icon || '📌', type });
+  debounceBackup();
+  return id;
 }
 
 async function deleteCategory(name, type) {
   await db.categories.where({ name, type }).delete();
+  debounceBackup();
 }
 
 // --- 工具 ---
@@ -123,5 +129,65 @@ function dateStr(d) {
   return `${y}-${m}-${day}`;
 }
 
+// --- 数据备份/恢复 ---
+const BACKUP_KEY = 'bookkeeper_backup';
+
+let backupTimer = null;
+function debounceBackup() {
+  clearTimeout(backupTimer);
+  backupTimer = setTimeout(autoBackup, 2000);
+}
+
+async function autoBackup() {
+  try {
+    const txs = await db.transactions.toArray();
+    const cats = await db.categories.toArray();
+    const data = { txs, cats, time: Date.now() };
+    localStorage.setItem(BACKUP_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+async function autoRestore() {
+  try {
+    const count = await db.transactions.count();
+    if (count > 0) return false; // 有数据，不恢复
+
+    const raw = localStorage.getItem(BACKUP_KEY);
+    if (!raw) return false;
+
+    const data = JSON.parse(raw);
+    if (!data.txs || data.txs.length === 0) return false;
+
+    if (!confirm(`检测到备份数据（${data.txs.length} 条记录，${new Date(data.time).toLocaleString('zh-CN')}），是否恢复？`)) return false;
+
+    await db.transactions.bulkAdd(data.txs);
+    if (data.cats) {
+      await db.categories.clear();
+      await db.categories.bulkAdd(data.cats);
+    }
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function getBackupInfo() {
+  try {
+    const raw = localStorage.getItem(BACKUP_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return {
+      count: data.txs.length,
+      time: new Date(data.time)
+    };
+  } catch(e) {
+    return null;
+  }
+}
+
 // 初始化
-db.open().then(ensureCategories).catch(e => console.error('DB init error:', e));
+async function initDB() {
+  await db.open();
+  await ensureCategories();
+  await autoRestore();
+}

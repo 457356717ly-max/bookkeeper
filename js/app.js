@@ -17,9 +17,8 @@ function waitForDB(timeout = 10000) {
 async function boot() {
   try {
     await waitForDB();
-    await db.open();
-    await ensureCategories();
-    await initYearSelector(); // 预加载年份列表
+    await initDB();
+    await initYearSelector();
   } catch (e) {
     console.error('Boot error:', e);
   }
@@ -51,7 +50,7 @@ function initApp() {
       headerTitle.textContent = titles[tab] || '记账';
 
       if (tab === 'stats') refreshStats();
-      if (tab === 'settings') refreshSettings();
+      if (tab === 'settings') { refreshSettings(); updateBackupStatus(); }
     });
   });
 
@@ -582,6 +581,16 @@ function initApp() {
   };
 
   // === 导出 CSV ===
+  function updateBackupStatus() {
+    const info = getBackupInfo();
+    const el = document.getElementById('backup-status');
+    if (info && info.count > 0) {
+      el.textContent = `🔒 自动备份：${info.count} 条 · ${info.time.toLocaleString('zh-CN')}`;
+    } else {
+      el.textContent = '暂无自动备份';
+    }
+  }
+
   document.getElementById('export-csv').addEventListener('click', async () => {
     const txs = await getAllTransactions();
     if (txs.length === 0) { showToast('没有数据'); return; }
@@ -627,6 +636,7 @@ function initApp() {
       await refreshRecordList();
       await refreshSettings();
       await loadQuickCats();
+      await autoBackup();
       showToast(`已恢复 ${data.transactions.length} 条记录`);
     } catch (err) {
       showToast('导入失败: ' + err.message);
