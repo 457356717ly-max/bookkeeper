@@ -1,11 +1,36 @@
 // 主应用逻辑 (app.js)
 // 依赖: db.js, parser.js, stats.js, icons.js
 
-document.addEventListener('DOMContentLoaded', async () => {
-  await db.open();
-  await ensureCategories();
+// 等待 Dexie 就绪（CDN 慢加载兜底）
+function waitForDB(timeout = 10000) {
+  return new Promise((resolve, reject) => {
+    if (typeof Dexie !== 'undefined') { resolve(); return; }
+    let elapsed = 0;
+    const check = setInterval(() => {
+      elapsed += 200;
+      if (typeof Dexie !== 'undefined') { clearInterval(check); resolve(); return; }
+      if (elapsed >= timeout) { clearInterval(check); reject(new Error('Dexie load timeout')); }
+    }, 200);
+  });
+}
+
+async function boot() {
+  try {
+    await waitForDB();
+    await db.open();
+    await ensureCategories();
+  } catch (e) {
+    console.error('Boot error:', e);
+  }
   initApp();
-});
+}
+
+// DOM 就绪后启动
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}
 
 function initApp() {
   // === Tab 切换 ===
@@ -312,4 +337,4 @@ function initApp() {
 
   // 让输入框自动聚焦
   setTimeout(() => document.getElementById('record-input').focus(), 500);
-});
+}
