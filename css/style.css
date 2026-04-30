@@ -938,8 +938,8 @@ input, button, select, textarea, [role="button"], .nav-btn, .quick-cat, .cat-del
 .budget-input-wrap {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 20px 20px;
+  gap: 10px;
+  padding: 12px 16px;
   background: #0d1b36;
   border-radius: var(--radius);
   border: 1px solid rgba(255,255,255,0.06);
@@ -953,8 +953,8 @@ input, button, select, textarea, [role="button"], .nav-btn, .quick-cat, .cat-del
 
 .budget-input-wrap span {
   color: #556;
-  font-size: 28px;
-  font-weight: 800;
+  font-size: 18px;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
@@ -963,11 +963,11 @@ input, button, select, textarea, [role="button"], .nav-btn, .quick-cat, .cat-del
   border: none;
   background: none;
   color: #e0e0e0;
-  font-size: 26px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
   outline: none;
   padding: 0;
-  height: 48px;
+  height: 24px;
   -webkit-appearance: none;
   touch-action: manipulation;
   user-select: auto;
