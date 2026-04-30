@@ -80,6 +80,95 @@ function initApp() {
     }
   });
 
+  // === 语音录入 ===
+  const voiceBtn = document.getElementById('voice-btn');
+  let recognition = null;
+
+  function initSpeech() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      voiceBtn.style.display = 'none';
+      return;
+    }
+    recognition = new SpeechRecognition();
+    recognition.lang = 'zh-CN';
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      let final = '';
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const r = event.results[i];
+        if (r.isFinal) {
+          final += r[0].transcript;
+        } else {
+          interim += r[0].transcript;
+        }
+      }
+      // 展示识别文字（优先展示最终结果）
+      const text = final || interim;
+      if (text) {
+        input.value = text;
+        input.focus();
+      }
+      // 有最终结果 → 自动提交
+      if (final) {
+        stopListening();
+        setTimeout(() => handleInput(), 300);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      stopListening();
+      if (event.error === 'not-allowed') {
+        showToast('请允许麦克风权限');
+      } else if (event.error !== 'no-speech') {
+        showToast('语音识别出错，请重试');
+      }
+    };
+
+    recognition.onend = () => {
+      // 如果没有最终结果且仍在 listening 状态，说明是意外结束
+      if (voiceBtn.classList.contains('listening')) {
+        stopListening();
+      }
+    };
+  }
+
+  function startListening() {
+    if (!recognition) {
+      showToast('浏览器不支持语音录入');
+      return;
+    }
+    try {
+      voiceBtn.classList.add('listening');
+      voiceBtn.textContent = '🔴';
+      input.placeholder = '正在听…';
+      input.value = '';
+      recognition.start();
+    } catch (e) {
+      stopListening();
+    }
+  }
+
+  function stopListening() {
+    voiceBtn.classList.remove('listening');
+    voiceBtn.textContent = '🎤';
+    input.placeholder = '记一笔… 如「午饭35 打车20」';
+    try { recognition.stop(); } catch(e) {}
+  }
+
+  voiceBtn.addEventListener('click', () => {
+    if (voiceBtn.classList.contains('listening')) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  });
+
+  initSpeech();
+
   // === 解析预览 ===
   let pendingTx = null;
 
