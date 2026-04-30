@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="记账">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icon-192.svg">
+  <title>记账</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/dexie@4.0.10/dist/dexie.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- 头部 -->
+<header id="header">
+  <h1 id="header-title">记账</h1>
+</header>
+
+<!-- Tab 1: 记账 -->
+<main id="tab-record" class="tab-page active">
+  <div class="input-area">
+    <input type="text" id="record-input" placeholder="记一笔… 如「午饭35 打车20」" autocomplete="off" enterkeyhint="done">
+    <button id="record-submit" class="btn-primary">记</button>
+  </div>
+  <div id="parse-preview" class="card hidden">
+    <div class="preview-header">
+      <span id="preview-category"></span>
+      <span id="preview-amount"></span>
+    </div>
+    <div class="preview-detail">
+      <span id="preview-note"></span>
+      <span id="preview-date"></span>
+    </div>
+    <div class="preview-actions">
+      <button id="preview-confirm" class="btn-primary btn-sm">确认记账</button>
+      <button id="preview-cancel" class="btn-secondary btn-sm">取消</button>
+    </div>
+  </div>
+  <div id="quick-record" class="quick-record">
+    <div class="quick-amount">
+      <input type="text" id="quick-amount" placeholder="金额" inputmode="decimal">
+      <span>元</span>
+    </div>
+    <div class="quick-cats" id="quick-cats"></div>
+    <button id="quick-record-btn" class="btn-primary btn-sm">快速记一笔</button>
+  </div>
+  <div class="section-label">今日流水</div>
+  <div id="today-list" class="transaction-list"></div>
+  <div class="section-label">最近</div>
+  <div id="recent-list" class="transaction-list"></div>
+</main>
+
+<!-- Tab 2: 统计 -->
+<main id="tab-stats" class="tab-page">
+  <div class="stats-summary">
+    <div class="stat-card">
+      <div class="stat-label">本周支出</div>
+      <div id="stat-week" class="stat-value">¥0.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">本月支出</div>
+      <div id="stat-month" class="stat-value">¥0.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">日均支出</div>
+      <div id="stat-daily-avg" class="stat-value">¥0.00</div>
+    </div>
+  </div>
+  <div class="chart-container">
+    <div class="chart-label">分类占比（本月）</div>
+    <canvas id="chart-pie"></canvas>
+  </div>
+  <div class="chart-container">
+    <div class="chart-label">每日支出趋势</div>
+    <canvas id="chart-line"></canvas>
+  </div>
+</main>
+
+<!-- Tab 3: 设置 -->
+<main id="tab-settings" class="tab-page">
+  <div class="settings-section">
+    <div class="section-title">支出分类</div>
+    <div id="cat-list-expense" class="cat-list"></div>
+    <div class="add-cat">
+      <input type="text" id="new-cat-name" placeholder="新分类名称">
+      <input type="text" id="new-cat-icon" placeholder="图标 emoji" maxlength="2">
+      <button id="add-cat-btn" class="btn-primary btn-sm">添加</button>
+    </div>
+  </div>
+  <div class="settings-section">
+    <div class="section-title">数据</div>
+    <button id="export-csv" class="btn-secondary">导出 CSV</button>
+    <button id="export-json" class="btn-secondary">导出 JSON 备份</button>
+    <button id="import-json" class="btn-secondary">恢复 JSON 备份</button>
+    <input type="file" id="import-file" accept=".json" class="hidden">
+  </div>
+</main>
+
+<!-- 底部导航 -->
+<nav id="bottom-nav">
+  <button class="nav-btn active" data-tab="record">
+    <span class="nav-icon">📝</span>
+    <span class="nav-label">记账</span>
+  </button>
+  <button class="nav-btn" data-tab="stats">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">统计</span>
+  </button>
+  <button class="nav-btn" data-tab="settings">
+    <span class="nav-icon">⚙️</span>
+    <span class="nav-label">设置</span>
+  </button>
+</nav>
+
+<script src="js/icons.js"></script>
+<script src="js/db.js"></script>
+<script src="js/parser.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/app.js"></script>
+
+<!-- Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+</body>
+</html>
