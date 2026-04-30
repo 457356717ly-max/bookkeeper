@@ -54,9 +54,9 @@
     <div class="quick-cats" id="quick-cats"></div>
     <button id="quick-record-btn" class="btn-primary btn-sm">快速记一笔</button>
   </div>
-  <div class="section-label">今日流水</div>
+  <div class="section-label" data-collapse="today">▶ 今日流水</div>
   <div id="today-list" class="transaction-list"></div>
-  <div class="section-label">最近</div>
+  <div class="section-label" data-collapse="recent">▶ 最近</div>
   <div id="recent-list" class="transaction-list"></div>
 </main>
 
@@ -106,19 +106,19 @@
 
   <!-- 分类明细 -->
   <div class="chart-container">
-    <div class="chart-label">分类明细</div>
+    <div class="chart-label" data-collapse="cat-breakdown">▶ 分类明细</div>
     <div id="category-breakdown" class="category-breakdown"></div>
   </div>
 
   <!-- 饼图 -->
   <div class="chart-container">
-    <div class="chart-label">分类占比</div>
+    <div class="chart-label" data-collapse="chart-pie">▶ 分类占比</div>
     <canvas id="chart-pie"></canvas>
   </div>
 
   <!-- 折线图 -->
   <div class="chart-container">
-    <div class="chart-label">每日支出趋势</div>
+    <div class="chart-label" data-collapse="chart-line">▶ 每日支出趋势</div>
     <canvas id="chart-line"></canvas>
   </div>
 </main>

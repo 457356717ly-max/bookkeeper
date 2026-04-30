@@ -685,7 +685,40 @@ function initApp() {
   // === 初始加载 ===
   loadQuickCats();
   refreshRecordList();
+  initCollapse();
 
   // 让输入框自动聚焦
   setTimeout(() => document.getElementById('record-input').focus(), 500);
+}
+
+// === 折叠/展开 ===
+function initCollapse() {
+  document.querySelectorAll('[data-collapse]').forEach(label => {
+    const key = label.dataset.collapse;
+    // 用 span 包裹箭头，方便旋转
+    const text = label.textContent.replace(/^[▶▼]\s*/, '');
+    const saved = localStorage.getItem('collapse_' + key);
+    const isCollapsed = saved === '1';
+
+    label.innerHTML = `<span class="arrow">▼</span> ${text}`;
+    if (isCollapsed) {
+      label.classList.add('collapsed');
+      label.querySelector('.arrow').textContent = '▶';
+    }
+
+    label.addEventListener('click', () => {
+      const collapsed = label.classList.toggle('collapsed');
+      const arrow = label.querySelector('.arrow');
+      arrow.textContent = collapsed ? '▶' : '▼';
+      localStorage.setItem('collapse_' + key, collapsed ? '1' : '0');
+
+      // 折线图/饼图折叠后需重绘
+      if (key === 'chart-pie' && !collapsed) {
+        setTimeout(() => refreshStats(), 100);
+      }
+      if (key === 'chart-line' && !collapsed) {
+        setTimeout(() => refreshStats(), 100);
+      }
+    });
+  });
 }

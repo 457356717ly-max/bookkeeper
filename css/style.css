@@ -309,6 +309,45 @@ input, button, select, textarea, [role="button"], .nav-btn, .quick-cat, .cat-del
   color: var(--text-dim);
   padding: 8px 0 4px;
   font-weight: 500;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.section-label:active {
+  color: var(--text);
+}
+
+.section-label .arrow {
+  font-size: 10px;
+  transition: transform 0.25s ease;
+  display: inline-block;
+}
+
+.section-label.collapsed .arrow {
+  transform: rotate(-90deg);
+}
+
+.section-label + .transaction-list,
+.section-label + #today-list,
+.section-label + #recent-list {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  max-height: 2000px;
+  opacity: 1;
+}
+
+.section-label.collapsed + .transaction-list,
+.section-label.collapsed + #today-list,
+.section-label.collapsed + #recent-list {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .transaction-list {
@@ -504,6 +543,39 @@ input, button, select, textarea, [role="button"], .nav-btn, .quick-cat, .cat-del
   font-size: 14px;
   margin-bottom: 12px;
   font-weight: 500;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chart-label .arrow {
+  font-size: 10px;
+  transition: transform 0.25s ease;
+  display: inline-block;
+}
+
+.chart-label.collapsed .arrow {
+  transform: rotate(-90deg);
+}
+
+.chart-container > canvas,
+.chart-container > .category-breakdown {
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  max-height: 600px;
+  opacity: 1;
+  overflow: hidden;
+}
+
+.chart-label.collapsed + canvas,
+.chart-label.collapsed + div {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .chart-container canvas {
