@@ -58,24 +58,49 @@
 
 <!-- Tab 2: 统计 -->
 <main id="tab-stats" class="tab-page">
+  <!-- 时间选择器 -->
+  <div class="time-selector">
+    <select id="sel-year" class="sel"></select>
+    <span class="sel-label">年</span>
+    <select id="sel-month" class="sel">
+      <option value="0">全年</option>
+      <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+      <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+      <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+      <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+    </select>
+    <span class="sel-label">月</span>
+  </div>
+
+  <!-- 总览卡片 -->
   <div class="stats-summary">
     <div class="stat-card">
-      <div class="stat-label">本周支出</div>
-      <div id="stat-week" class="stat-value">¥0.00</div>
+      <div class="stat-label" id="stat-total-label">本年支出</div>
+      <div id="stat-total" class="stat-value">¥0.00</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">本月支出</div>
-      <div id="stat-month" class="stat-value">¥0.00</div>
+      <div class="stat-label" id="stat-month-label">本月支出</div>
+      <div id="stat-month-val" class="stat-value">¥0.00</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">日均支出</div>
       <div id="stat-daily-avg" class="stat-value">¥0.00</div>
     </div>
   </div>
+
+  <!-- 分类明细 -->
   <div class="chart-container">
-    <div class="chart-label">分类占比（本月）</div>
+    <div class="chart-label">分类明细</div>
+    <div id="category-breakdown" class="category-breakdown"></div>
+  </div>
+
+  <!-- 饼图 -->
+  <div class="chart-container">
+    <div class="chart-label">分类占比</div>
     <canvas id="chart-pie"></canvas>
   </div>
+
+  <!-- 折线图 -->
   <div class="chart-container">
     <div class="chart-label">每日支出趋势</div>
     <canvas id="chart-line"></canvas>

@@ -19,6 +19,7 @@ async function boot() {
     await waitForDB();
     await db.open();
     await ensureCategories();
+    await initYearSelector(); // 预加载年份列表
   } catch (e) {
     console.error('Boot error:', e);
   }

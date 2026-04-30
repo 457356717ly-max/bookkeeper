@@ -4,70 +4,146 @@
 let pieChart = null;
 let lineChart = null;
 
-// 计算本周支出
-async function calcWeekExpense() {
-  const txs = await getWeekTransactions();
-  return txs
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+// 获取所有有数据的年份
+async function getAvailableYears() {
+  const all = await db.transactions.orderBy('date').toArray();
+  const years = new Set();
+  for (const t of all) {
+    if (t.date) years.add(t.date.slice(0, 4));
+  }
+  const y = new Date().getFullYear();
+  years.add(String(y));
+  return [...years].sort().reverse();
 }
 
-// 计算本月支出
-async function calcMonthExpense(year, month) {
-  const txs = await getMonthTransactions(year, month);
-  return txs
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+// 获取某时间段的支出
+async function getExpenses(year, month) {
+  let txs;
+  if (month && month > 0) {
+    txs = await getMonthTransactions(year, month);
+  } else {
+    // 全年
+    txs = await db.transactions
+      .where('date').between(`${year}-01-01`, `${year}-12-31`, true, true)
+      .toArray();
+  }
+  return txs.filter(t => t.type === 'expense');
+}
+
+// 计算总支出
+async function calcTotalExpense(year, month) {
+  const expenses = await getExpenses(year, month);
+  return expenses.reduce((sum, t) => sum + t.amount, 0);
 }
 
 // 计算日均支出
-async function calcDailyAvg(year, month) {
-  const total = await calcMonthExpense(year, month);
-  const days = new Date(year, month, 0).getDate();
-  return total / Math.max(1, Math.min(new Date().getDate(), days));
+async function calcDailyAvg(expenses, month, year) {
+  if (month && month > 0) {
+    const days = new Date(year, month, 0).getDate();
+    const todayDay = (new Date().getFullYear() === year && new Date().getMonth() + 1 === month)
+      ? new Date().getDate() : days;
+    return expenses.reduce((sum, t) => sum + t.amount, 0) / Math.max(1, todayDay);
+  } else {
+    // 全年
+    const days = (new Date().getFullYear() === year)
+      ? dayOfYear(new Date()) : 365;
+    return expenses.reduce((sum, t) => sum + t.amount, 0) / Math.max(1, days);
+  }
 }
 
-// 分类统计（本月）
-async function calcCategoryStats(year, month) {
-  const txs = await getMonthTransactions(year, month);
-  const expenses = txs.filter(t => t.type === 'expense');
+function dayOfYear(d) {
+  const start = new Date(d.getFullYear(), 0, 0);
+  return Math.floor((d - start) / 86400000);
+}
+
+// 分类统计
+function calcCategoryStats(expenses) {
   const map = {};
   for (const t of expenses) {
     map[t.category] = (map[t.category] || 0) + t.amount;
   }
+  const total = Object.values(map).reduce((a, b) => a + b, 0) || 1;
   return Object.entries(map)
-    .map(([name, amount]) => ({ name, amount }))
+    .map(([name, amount]) => ({ name, amount, pct: Math.round(amount / total * 100) }))
     .sort((a, b) => b.amount - a.amount);
 }
 
 // 每日趋势统计
-async function calcDailyTrend(days = 30) {
-  const today = new Date();
-  const map = {};
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    map[dateStr(d)] = 0;
-  }
-  const startDate = dateStr(new Date(today - (days - 1) * 86400000));
-  const txs = await db.transactions
-    .where('date').between(startDate, todayStr(), true, true)
-    .toArray();
-  for (const t of txs) {
-    if (t.type === 'expense' && map[t.date] !== undefined) {
-      map[t.date] += t.amount;
+async function calcDailyTrend(year, month) {
+  if (month && month > 0) {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const map = {};
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      map[key] = 0;
     }
+    const txs = await db.transactions
+      .where('date').between(
+        `${year}-${String(month).padStart(2, '0')}-01`,
+        `${year}-${String(month).padStart(2, '0')}-${daysInMonth}`,
+        true, true
+      ).toArray();
+    for (const t of txs) {
+      if (t.type === 'expense' && map[t.date] !== undefined) {
+        map[t.date] += t.amount;
+      }
+    }
+    return Object.entries(map).map(([date, amount]) => ({
+      date: date.slice(8), // DD
+      amount: Math.round(amount * 100) / 100
+    }));
+  } else {
+    // 全年 → 按月趋势
+    const map = {};
+    for (let m = 1; m <= 12; m++) {
+      map[`${m}月`] = 0;
+    }
+    const txs = await db.transactions
+      .where('date').between(`${year}-01-01`, `${year}-12-31`, true, true)
+      .toArray();
+    for (const t of txs) {
+      if (t.type === 'expense' && t.date) {
+        const m = parseInt(t.date.slice(5, 7));
+        map[`${m}月`] += t.amount;
+      }
+    }
+    return Object.entries(map).map(([date, amount]) => ({
+      date,
+      amount: Math.round(amount * 100) / 100
+    }));
   }
-  return Object.entries(map).map(([date, amount]) => ({
-    date: date.slice(5), // MM-DD
-    amount: Math.round(amount * 100) / 100
-  }));
+}
+
+// 渲染分类明细列表
+function renderCategoryBreakdown(stats, total) {
+  const container = document.getElementById('category-breakdown');
+  if (stats.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;">暂无数据</div>';
+    return;
+  }
+  const colors = ['#e94560', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#95a5a6'];
+  container.innerHTML = stats.map((s, i) => {
+    const icon = getIcon(s.name, 'expense');
+    const color = colors[i % colors.length];
+    return `
+      <div class="cat-row">
+        <div class="cat-row-left">
+          <span class="cat-row-icon">${icon}</span>
+          <span class="cat-row-name">${s.name}</span>
+        </div>
+        <div class="cat-row-right">
+          <span class="cat-row-amount">¥${s.amount.toFixed(2)}</span>
+          <span class="cat-row-pct">${s.pct}%</span>
+          <div class="cat-row-bar-wrap">
+            <div class="cat-row-bar" style="width:${s.pct}%;background:${color}"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 // 渲染饼图
-async function renderPieChart() {
-  const now = new Date();
-  const stats = await calcCategoryStats(now.getFullYear(), now.getMonth() + 1);
+function renderPieChart(stats) {
   const ctx = document.getElementById('chart-pie').getContext('2d');
   if (pieChart) pieChart.destroy();
   if (stats.length === 0) {
@@ -99,8 +175,7 @@ async function renderPieChart() {
 }
 
 // 渲染折线图
-async function renderLineChart() {
-  const trend = await calcDailyTrend(30);
+function renderLineChart(trend) {
   const ctx = document.getElementById('chart-line').getContext('2d');
   if (lineChart) lineChart.destroy();
   lineChart = new Chart(ctx, {
@@ -121,12 +196,10 @@ async function renderLineChart() {
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      plugins: {
-        legend: { display: false }
-      },
+      plugins: { legend: { display: false } },
       scales: {
         x: {
-          ticks: { color: '#556', font: { size: 10 }, maxTicksLimit: 8 },
+          ticks: { color: '#556', font: { size: 10 }, maxTicksLimit: 12 },
           grid: { color: 'rgba(255,255,255,0.03)' }
         },
         y: {
@@ -141,15 +214,60 @@ async function renderLineChart() {
 
 // 刷新统计页
 async function refreshStats() {
-  const now = new Date();
-  const weekTotal = await calcWeekExpense();
-  const monthTotal = await calcMonthExpense(now.getFullYear(), now.getMonth() + 1);
-  const dailyAvg = await calcDailyAvg(now.getFullYear(), now.getMonth() + 1);
+  const selYear = document.getElementById('sel-year');
+  const selMonth = document.getElementById('sel-month');
+  const year = parseInt(selYear.value);
+  const month = parseInt(selMonth.value);
 
-  document.getElementById('stat-week').textContent = '¥' + weekTotal.toFixed(2);
-  document.getElementById('stat-month').textContent = '¥' + monthTotal.toFixed(2);
+  // 更新标签
+  const totalLabel = document.getElementById('stat-total-label');
+  const monthLabel = document.getElementById('stat-month-label');
+
+  if (month === 0) {
+    totalLabel.textContent = `${year}年总支出`;
+    monthLabel.textContent = '月均支出';
+  } else {
+    totalLabel.textContent = `${year}年总支出`;
+    monthLabel.textContent = `${month}月支出`;
+  }
+
+  const expenses = await getExpenses(year, month);
+  const yearTotal = await calcTotalExpense(year, 0); // 全年总额
+
+  let selectedTotal;
+  if (month === 0) {
+    selectedTotal = yearTotal;
+  } else {
+    selectedTotal = expenses.reduce((sum, t) => sum + t.amount, 0);
+  }
+
+  const dailyAvg = await calcDailyAvg(expenses, month, year);
+  const catStats = calcCategoryStats(expenses);
+
+  document.getElementById('stat-total').textContent = '¥' + yearTotal.toFixed(2);
+  document.getElementById('stat-month-val').textContent = '¥' + selectedTotal.toFixed(2);
   document.getElementById('stat-daily-avg').textContent = '¥' + dailyAvg.toFixed(2);
 
-  await renderPieChart();
-  await renderLineChart();
+  renderCategoryBreakdown(catStats, selectedTotal);
+  renderPieChart(catStats);
+
+  const trend = await calcDailyTrend(year, month);
+  renderLineChart(trend);
+}
+
+// 初始化年份选择器
+async function initYearSelector() {
+  const selYear = document.getElementById('sel-year');
+  const years = await getAvailableYears();
+  selYear.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  const now = new Date();
+  // 默认选今年
+  const thisYear = String(now.getFullYear());
+  if (years.includes(thisYear)) selYear.value = thisYear;
+  // 默认选本月
+  document.getElementById('sel-month').value = String(now.getMonth() + 1);
+
+  // 事件
+  selYear.addEventListener('change', refreshStats);
+  document.getElementById('sel-month').addEventListener('change', refreshStats);
 }
