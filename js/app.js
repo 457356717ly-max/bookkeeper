@@ -93,6 +93,7 @@ function initApp() {
     recognition = new SpeechRecognition();
     recognition.lang = 'zh-CN';
     recognition.interimResults = true;
+    recognition.continuous = false;
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event) => {
@@ -106,13 +107,11 @@ function initApp() {
           interim += r[0].transcript;
         }
       }
-      // 展示识别文字（优先展示最终结果）
       const text = final || interim;
       if (text) {
         input.value = text;
         input.focus();
       }
-      // 有最终结果 → 自动提交
       if (final) {
         stopListening();
         setTimeout(() => handleInput(), 300);
@@ -122,14 +121,21 @@ function initApp() {
     recognition.onerror = (event) => {
       stopListening();
       if (event.error === 'not-allowed') {
-        showToast('请允许麦克风权限');
-      } else if (event.error !== 'no-speech') {
-        showToast('语音识别出错，请重试');
+        showToast('麦克风权限未开启，请在系统设置中允许');
+      } else if (event.error === 'no-speech') {
+        showToast('没有听到声音，请再试一次');
+      } else if (event.error === 'audio-capture') {
+        showToast('未检测到麦克风');
+      } else if (event.error === 'network') {
+        showToast('语音识别需要网络连接');
+      } else {
+        showToast('语音识别出错: ' + event.error);
       }
+      // 错误后重建 recognition 对象
+      initSpeech();
     };
 
     recognition.onend = () => {
-      // 如果没有最终结果且仍在 listening 状态，说明是意外结束
       if (voiceBtn.classList.contains('listening')) {
         stopListening();
       }
@@ -141,14 +147,16 @@ function initApp() {
       showToast('浏览器不支持语音录入');
       return;
     }
+    voiceBtn.classList.add('listening');
+    voiceBtn.textContent = '🔴';
+    input.placeholder = '正在听…说说花了什么';
+    input.value = '';
     try {
-      voiceBtn.classList.add('listening');
-      voiceBtn.textContent = '🔴';
-      input.placeholder = '正在听…';
-      input.value = '';
       recognition.start();
     } catch (e) {
       stopListening();
+      showToast('语音启动失败，请重试');
+      console.error('Speech start error:', e);
     }
   }
 
