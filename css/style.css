@@ -480,6 +480,129 @@ input, button, select, textarea, [role="button"], .nav-btn, .quick-cat, .cat-del
   max-height: 220px;
 }
 
+/* 图标选择器 */
+.icon-pick-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  background: var(--bg-input);
+  border: 2px solid var(--bg-input);
+  border-radius: 10px;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon-pick-btn:active {
+  border-color: var(--primary);
+}
+
+.icon-pick-btn img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.icon-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.icon-picker-overlay.hidden {
+  display: none;
+}
+
+.icon-picker-panel {
+  background: var(--bg-card);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 500px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 20px;
+  padding-bottom: calc(20px + var(--safe-bottom));
+}
+
+.icon-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.btn-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--bg-input);
+  color: var(--text-dim);
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.icon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.icon-option {
+  aspect-ratio: 1;
+  background: var(--bg-input);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font-size: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, transform 0.1s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon-option:active {
+  transform: scale(0.9);
+  border-color: var(--primary);
+}
+
+.icon-option img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.icon-picker-upload {
+  text-align: center;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.icon-picker-upload .btn-secondary {
+  width: auto;
+  display: inline-block;
+}
+
 /* 设置页 */
 .settings-section {
   background: var(--bg-card);

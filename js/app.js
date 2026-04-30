@@ -303,7 +303,7 @@ function initApp() {
     const expenseCats = await getCategories('expense');
     const catList = document.getElementById('cat-list-expense');
     catList.innerHTML = expenseCats.map(c =>
-      `<span class="cat-tag">${c.icon} ${c.name} <span class="cat-del" data-name="${c.name}">×</span></span>`
+      `<span class="cat-tag">${renderIcon(c.icon)} ${c.name} <span class="cat-del" data-name="${c.name}">×</span></span>`
     ).join('');
 
     catList.querySelectorAll('.cat-del').forEach(el => {
@@ -317,14 +317,98 @@ function initApp() {
     });
   }
 
+  // === 图标选择器 ===
+  const iconPicker = document.getElementById('icon-picker');
+  const iconBtn = document.getElementById('new-cat-icon-btn');
+  const iconGrid = document.getElementById('icon-picker-grid');
+  let selectedIcon = '📌';
+
+  // 预设图标库
+  const PRESET_ICONS = [
+    '🍜','🍕','🍔','🌮','🍱','🥗','☕','🍺','🍩','🍰','🍉','🍎',
+    '🚗','🚌','🚇','✈️','🚲','🛵','🚕','⛽','🚄','🚢',
+    '🛒','👗','👟','💄','📱','💻','🎁','👜','⌚','💍',
+    '🎮','🎬','🎵','🎸','⚽','🏀','🎤','🎯','🎲','🎪',
+    '🏠','💡','💧','🔧','📺','🛋️','🛁','🔑','🪴',
+    '💊','🏥','💉','🩺','🩹','🦷','👓','🌡️',
+    '📚','✏️','🎓','📝','💼','📐','🔬','🎨',
+    '💰','💵','💳','💎','🏦','📊','💸',
+    '🐱','🐶','🌸','⭐','❤️','🔥','🎉','📌'
+  ];
+
+  function renderIconGrid() {
+    iconGrid.innerHTML = PRESET_ICONS.map(icon =>
+      `<div class="icon-option" data-icon="${icon}">${icon}</div>`
+    ).join('');
+    iconGrid.querySelectorAll('.icon-option').forEach(el => {
+      el.addEventListener('click', () => {
+        selectedIcon = el.dataset.icon;
+        iconBtn.innerHTML = selectedIcon;
+        iconPicker.classList.add('hidden');
+      });
+    });
+  }
+
+  // 打开图标选择器
+  iconBtn.addEventListener('click', () => {
+    iconPicker.classList.remove('hidden');
+    renderIconGrid();
+  });
+
+  // 关闭
+  document.getElementById('icon-picker-close').addEventListener('click', () => {
+    iconPicker.classList.add('hidden');
+  });
+  iconPicker.addEventListener('click', e => {
+    if (e.target === iconPicker) iconPicker.classList.add('hidden');
+  });
+
+  // 上传图片
+  document.getElementById('icon-upload-btn').addEventListener('click', () => {
+    document.getElementById('icon-upload-file').click();
+  });
+
+  document.getElementById('icon-upload-file').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) { showToast('图片不能超过500KB'); return; }
+    try {
+      const base64 = await fileToBase64(file);
+      selectedIcon = base64;
+      iconBtn.innerHTML = `<img src="${base64}" alt="icon">`;
+      iconPicker.classList.add('hidden');
+    } catch(err) {
+      showToast('图片读取失败');
+    }
+    e.target.value = '';
+  });
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // 渲染图标（emoji 或 base64 图片）
+  function renderIcon(icon) {
+    if (!icon) return '📌';
+    if (icon.startsWith('data:image')) {
+      return `<img src="${icon}" alt="" style="width:20px;height:20px;border-radius:4px;object-fit:cover;vertical-align:middle;">`;
+    }
+    return icon;
+  }
+
   document.getElementById('add-cat-btn').addEventListener('click', async () => {
     const name = document.getElementById('new-cat-name').value.trim();
-    const icon = document.getElementById('new-cat-icon').value.trim();
     if (!name) { showToast('请输入分类名'); return; }
-    const result = await addCategory(name, icon || '📌', 'expense');
+    const result = await addCategory(name, selectedIcon, 'expense');
     if (result === null) { showToast('分类已存在'); return; }
     document.getElementById('new-cat-name').value = '';
-    document.getElementById('new-cat-icon').value = '';
+    selectedIcon = '📌';
+    iconBtn.innerHTML = '📌';
     await refreshSettings();
     await loadQuickCats();
     showToast('已添加');

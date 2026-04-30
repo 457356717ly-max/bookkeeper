@@ -114,10 +114,26 @@
     <div id="cat-list-expense" class="cat-list"></div>
     <div class="add-cat">
       <input type="text" id="new-cat-name" placeholder="新分类名称">
-      <input type="text" id="new-cat-icon" placeholder="图标 emoji" maxlength="2">
+      <button id="new-cat-icon-btn" class="icon-pick-btn" title="选择图标">📌</button>
       <button id="add-cat-btn" class="btn-primary btn-sm">添加</button>
     </div>
   </div>
+
+  <!-- 图标选择弹窗 -->
+  <div id="icon-picker" class="icon-picker-overlay hidden">
+    <div class="icon-picker-panel">
+      <div class="icon-picker-header">
+        <span>选择图标</span>
+        <button id="icon-picker-close" class="btn-close">✕</button>
+      </div>
+      <div class="icon-picker-grid" id="icon-picker-grid"></div>
+      <div class="icon-picker-upload">
+        <button id="icon-upload-btn" class="btn-secondary btn-sm">📷 上传本地图片</button>
+        <input type="file" id="icon-upload-file" accept="image/*" class="hidden">
+      </div>
+    </div>
+  </div>
+
   <div class="settings-section">
     <div class="section-title">数据</div>
     <button id="export-csv" class="btn-secondary">导出 CSV</button>
