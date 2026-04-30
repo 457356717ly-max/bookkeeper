@@ -143,10 +143,49 @@ function initApp() {
   }
 
   function startListening() {
-    if (!recognition) {
+    // 每次都重建 recognition 对象，防止 aborted 错误
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
       showToast('浏览器不支持语音录入');
       return;
     }
+    // 先清理旧对象
+    if (recognition) {
+      try { recognition.abort(); } catch(e) {}
+      recognition = null;
+    }
+    recognition = new SpeechRecognition();
+    recognition.lang = 'zh-CN';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      let final = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) final += event.results[i][0].transcript;
+      }
+      if (final) {
+        input.value = final;
+        stopListening();
+        setTimeout(() => handleInput(), 300);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error === 'aborted') return; // 忽略主动中止
+      stopListening();
+      if (event.error === 'not-allowed') showToast('麦克风权限未开启，请在系统设置中允许');
+      else if (event.error === 'no-speech') showToast('没有听到声音，请再试一次');
+      else if (event.error === 'audio-capture') showToast('未检测到麦克风');
+      else if (event.error === 'network') showToast('语音识别需要网络连接');
+      else showToast('语音识别出错: ' + event.error);
+    };
+
+    recognition.onend = () => {
+      if (voiceBtn.classList.contains('listening')) stopListening();
+    };
+
     voiceBtn.classList.add('listening');
     voiceBtn.textContent = '🔴';
     input.placeholder = '正在听…说说花了什么';
@@ -156,7 +195,6 @@ function initApp() {
     } catch (e) {
       stopListening();
       showToast('语音启动失败，请重试');
-      console.error('Speech start error:', e);
     }
   }
 
@@ -164,9 +202,16 @@ function initApp() {
     voiceBtn.classList.remove('listening');
     voiceBtn.textContent = '🎤';
     input.placeholder = '记一笔… 如「午饭35 打车20」';
-    try { recognition.stop(); } catch(e) {}
+    if (recognition) {
+      try { recognition.abort(); } catch(e) {}
+      recognition = null;
+    }
   }
 
+  // 初始创建识别对象
+  initSpeech();
+
+  // 点击切换
   voiceBtn.addEventListener('click', () => {
     if (voiceBtn.classList.contains('listening')) {
       stopListening();
@@ -174,8 +219,6 @@ function initApp() {
       startListening();
     }
   });
-
-  initSpeech();
 
   // === 解析预览 ===
   let pendingTx = null;
